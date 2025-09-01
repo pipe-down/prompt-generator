@@ -31,13 +31,13 @@ export default function InputArea({ input, setInput, onGenerate, disabled }) {
           type="button"
           onClick={onGenerate}
           disabled={!input.trim() || disabled}
-          className={`btn-icon p-4 h-12 flex items-center justifyㄹ-center rounded-lg ${
+          className={`btn-icon p-4 h-12 flex items-center justify-center rounded-lg ${
             !input.trim() || disabled
               ? 'text-gray-400 cursor-not-allowed'
               : 'text-[var(--primary-color)] hover:bg-gray-100 dark:hover:bg-gray-700'
           }`}
         >
-          <PaperAirplaneIcon className="h-6 w-6 mb-1" />
+          <PaperAirplaneIcon className="h-6 w-6 mb-1.5" />
         </button>
       </div>
       <div className="mt-2 text-xs text-gray-500 text-center dark:text-gray-400">

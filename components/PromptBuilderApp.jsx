@@ -4,7 +4,7 @@ import Header from './Header';
 import ChatContainer from './ChatContainer';
 import InputArea from './InputArea';
 import { ManualCopyModal, HistoryModal, SettingsModal } from './Modals';
-import { FLAG_LIST, DEFAULT_GEMINI } from '../constants';
+import { FLAG_LIST, DEFAULT_GEMINI, DEFAULT_VIBE, PRESET_PERSONAS } from '../constants';
 import { saveLS, loadLS, hasLocalStorage, memStore } from '../utils/storage';
 import { buildLocalFinalPrompt, generateWithGemini } from '../services/promptService';
 
@@ -46,6 +46,7 @@ export default function PromptBuilderApp() {
   const [isAiResponseEnabled, setIsAiResponseEnabled] = useState(() => loadLS('pg.isAiResponseEnabled', false));
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [editingTitle, setEditingTitle] = useState('');
+  const [vibe, setVibe] = useState(() => loadLS('pg.vibe', DEFAULT_VIBE));
 
   // persist
   useEffect(() => {
@@ -57,6 +58,9 @@ export default function PromptBuilderApp() {
   useEffect(() => {
     saveLS('pg.gemini', gemini);
   }, [gemini]);
+  useEffect(() => {
+    saveLS('pg.vibe', vibe);
+  }, [vibe]);
 
   useEffect(() => {
     saveLS('pg.isAiResponseEnabled', isAiResponseEnabled);
@@ -96,7 +100,7 @@ export default function PromptBuilderApp() {
   const assistantHistory = useMemo(
     () =>
       (active?.messages || [])
-        .filter((m) => m.role === 'assistant')
+        .filter((m) => m.role === 'assistant' && m.content !== '안녕하세요! 무엇을 도와드릴까요?')
         .map((m) => ({ ...m, ts: m.ts || Date.now() }))
         .reverse(),
     [active]
@@ -125,7 +129,7 @@ export default function PromptBuilderApp() {
     try {
       const content = isAiResponseEnabled && gemini.apiKey
         ? await generateWithGemini(merged, gemini)
-        : buildLocalFinalPrompt(merged);
+        : buildLocalFinalPrompt(merged, vibe);
       
       setSessions((prev) =>
         prev.map((s) => {
@@ -143,7 +147,7 @@ export default function PromptBuilderApp() {
         })
       );
     } catch (error) {
-      const fallback = buildLocalFinalPrompt(merged);
+      const fallback = buildLocalFinalPrompt(merged, vibe);
       const errMsg = `⚠ 엔진 오류로 로컬 생성으로 폴백했습니다.\n\n${fallback}`;
       
       setSessions((prev) =>
@@ -208,6 +212,10 @@ export default function PromptBuilderApp() {
     setIsAiResponseEnabled((prev) => !prev);
   };
 
+  const handlePersonaChange = (persona) => {
+    setVibe(prevVibe => ({ ...prevVibe, persona }));
+  };
+
   const handleEditSessionTitle = (id, currentTitle) => {
     setEditingSessionId(id);
     setEditingTitle(currentTitle);
@@ -269,6 +277,9 @@ export default function PromptBuilderApp() {
           onToggleSidebar={handleToggleSidebar}
           isAiResponseEnabled={isAiResponseEnabled}
           onToggleAiResponse={handleToggleAiResponse}
+          vibe={vibe}
+          onPersonaChange={handlePersonaChange}
+          presetPersonas={PRESET_PERSONAS}
         />
         <ChatContainer messages={active.messages} active={active} onCopy={copyText} />
         <InputArea
